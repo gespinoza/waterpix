@@ -93,7 +93,7 @@ wp_gdal.output_nc_to_tiffs(output_nc, output_path)
 ```
 
 ## Citation
-> Espinoza-Dávalos, G. E., & Bastiaanssen, W. G. M. (2017). *WaterPix: A Data Based Water Balance Model for Water Accounting.* http://doi.org/10.5281/zenodo.104574
+> Espinoza-Dávalos, G. E., & Bastiaanssen, W. G. M. (2017). *WaterPix: A Data Based Water Balance Model for Water Accounting.* http://doi.org/10.5281/zenodo.1045574
 
 ## Contact
 
