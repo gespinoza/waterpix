@@ -20,6 +20,10 @@ The two options are equivalent, the only difference is about the underlying libr
     - pandas ([https://pypi.python.org/pypi/pandas](https://pypi.python.org/pypi/pandas))
     - rpy2 ([https://pypi.python.org/pypi/rpy2](https://pypi.python.org/pypi/rpy2))
 - R 3.2.5 ([https://cran.r-project.org/](https://cran.r-project.org/))
+- R packages:
+    - sp ([https://cran.r-project.org/web/packages/sp/index.html](https://cran.r-project.org/web/packages/sp/index.html))
+    - gstat ([https://cran.r-project.org/web/packages/gstat/index.html](https://cran.r-project.org/web/packages/gstat/index.html))
+    - automap ([https://cran.r-project.org/web/packages/automap/index.html](https://cran.r-project.org/web/packages/automap/index.html))
 - Additional:
     - *gdal* option
         - Python GDAL package ([https://pypi.python.org/pypi/GDAL](https://pypi.python.org/pypi/GDAL))
