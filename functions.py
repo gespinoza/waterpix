@@ -505,7 +505,7 @@ def monthly_reducer(array, periods, nodata_value=-9999):
     Reduce the size of the yearly array into the input periods
     '''
     array = np.array(array)
-    mpp = 12/periods
+    mpp = int(12/periods)
     d, j, k = array.shape
     array[np.isclose(array, nodata_value)] = np.nan
     array_out = np.empty((periods, j, k))
