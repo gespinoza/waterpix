@@ -339,6 +339,10 @@ def run(input_nc, output_nc,
             gpix_array = np.where(blue_et_yr < np.nanpercentile(
                 blue_et_yr, 100*min_greenpx_proportion),
                                   1, np.nan)
+        if np.isnan(np.nanmean(gpix_array)):
+            gpix_array = np.where(blue_et_yr < np.nanpercentile(
+                blue_et_yr, 100*min_greenpx_proportion),
+                                  1, np.nan)
         # Store green pixels
         gpix_var[yyyyi, :, :] = gpix_array
     # First round

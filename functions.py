@@ -79,12 +79,12 @@ def flows_calculations_first_round(infz, df, pixel_pars,
     # Remaining term of the water balance
     df['Rest_Term'] = df['p'] - df['et'] - df['Qsw'] - df['dsm']
     df['Rest_Term_pos'] = df['Rest_Term'].apply(pos_func, 'columns')
-    rest_term_sum = df['Rest_Term_pos'].sum()
+#    rest_term_sum = df['Rest_Term_pos'].sum()
     # Correction of percolation using baseflow
-    if rest_term_sum > 0:
-        corr_factor = max(1, df['Qgw'].sum()/rest_term_sum)
-    else:
-        corr_factor = 1
+#    if rest_term_sum > 0:
+#        corr_factor = max(1, df['Qgw'].sum()/rest_term_sum)
+#    else:
+    corr_factor = 1
     df['perc'] = corr_factor * df['Rest_Term'].apply(pos_func, 'columns')
 #    df['perc'] = df['Rest_Term'].apply(pos_func, 'columns')
 #    df['Qgw'] = df['Qgw']*1.0/corr_factor
