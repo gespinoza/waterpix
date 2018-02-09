@@ -161,8 +161,10 @@ def flows_calculations_second_round(infz, df, pixel_pars, default_eff,
         df['infz'] * (df['thetasat'] - df['theta0']))
     # Remaining term of the water balance
     df['Rest_Term'] = df['p'] - df['et'] - df['Qsw_green'] - df['dsm']
+    df['Rest_Term2'] = df['p'] - df['et_green'] - df['Qsw_green'] - df['dsm']
     df['Rest_Term_pos'] = df['Rest_Term'].apply(pos_func, 'columns')
-    rest_term_sum = df['Rest_Term_pos'].sum()
+    df['Rest_Term_pos2'] = df['Rest_Term2'].apply(pos_func, 'columns')
+#    rest_term_sum = df['Rest_Term_pos'].sum()
     # Correction of percolation using baseflow
     df['Qgw_green'] = baseflow_calculation(np.array(df['Qsw_green']),
                                            baseflow_filter, qratio)
@@ -178,13 +180,10 @@ def flows_calculations_second_round(infz, df, pixel_pars, default_eff,
     for index, row in df.iterrows():
         if row['et'] - row['et_green'] < tolerance_monthly_greenpx:
             df.set_value(index, 'perc', row['perc_green'])
-            df.set_value(index, 'et_green', row['et']) #cmi001
-            df.set_value(index, 'et_blue', 0) #cmi001
-            df.set_value(index, 'supply', 0) #cmi001
-            df.set_value(index, 'delta_Qsw', 0) #cmi001
-            df.set_value(index, 'delta_perc', 0) #cmi001
         else:
             df.set_value(index, 'perc', row['perc'])
+            df['perc_green'] = corr_factor * df['Rest_Term2'].apply(pos_func, 'columns')
+
     # Incremental percolation
     df['delta_perc_diff'] = df['perc'] - df['perc_green']
     df['delta_perc'] = df['delta_perc_diff'].apply(pos_func, 'columns')
