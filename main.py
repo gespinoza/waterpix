@@ -206,13 +206,27 @@ def run(input_nc, output_nc,
                                     fill_value=std_fv)
     etg_var.long_name = 'Green evapotranspiration'
     etg_var.units = 'mm/year'
-
+    
+    etgm_var = out_nc.createVariable('ETgreen_M', 'f8',
+                                    ('time_yyyymm', 'latitude', 'longitude'),
+                                    fill_value=std_fv)
+    etgm_var.long_name = 'Green evapotranspiration m'
+    etgm_var.units = 'mm/month'
+    
+    # Blue Evapotranspiration (yearly)
     etb_var = out_nc.createVariable('ETblue_Y', 'f8',
                                     ('time_yyyy', 'latitude', 'longitude'),
                                     fill_value=std_fv)
-    # Blue Evapotranspiration (yearly)
+
     etb_var.long_name = 'Blue evapotranspiration'
     etb_var.units = 'mm/year'
+    
+    etbm_var = out_nc.createVariable('ETblue_M', 'f8',
+                                    ('time_yyyymm', 'latitude', 'longitude'),
+                                    fill_value=std_fv)
+    etbm_var.long_name = 'Blue evapotranspiration m'
+    etbm_var.units = 'mm/month'
+    
     # Rainfed pixels
     gpix_var = out_nc.createVariable('RainfedPixels_Y', 'l',
                                      ('time_yyyy', 'latitude', 'longitude'),
@@ -308,7 +322,9 @@ def run(input_nc, output_nc,
         phi[np.isinf(phi)] = np.nan
         phi[phi == 0] = np.nan
         et_p_bk = budyko_v(phi)
+#        green_et = np.nanmin((1.1*et_p_bk*p, et),axis=0) #cmi001
         green_et = np.minimum(1.1*et_p_bk*p, et)
+        green_et[np.isnan(green_et)] = 0
         blue_et = et - green_et
         green_et_yr = np.sum(green_et, axis=0)
         blue_et_yr = np.sum(blue_et, axis=0)
@@ -431,6 +447,16 @@ def run(input_nc, output_nc,
                         infz_var[yyyyi,
                                  lati, loni] = float(df_out['infz'][0])
                         rco_var[yyyyi,
+                                lati, loni] = 0
+                        etbm_var[ti1:ti2,
+                                lati, loni] = 0
+                        etgm_var[ti1:ti2,
+                                lati, loni] = np.array(df['et'])
+                        sup_var[ti1:ti2,
+                                lati, loni] = 0
+                        incss_var[ti1:ti2,
+                                lati, loni] = 0
+                        incper_var[ti1:ti2,
                                 lati, loni] = 0
                     else:
                         rco_var[yyyyi, lati, loni] = int(second_round)
@@ -610,6 +636,10 @@ def run(input_nc, output_nc,
                 effi_var[ti1:ti2,
                          lati, loni] = pd.np.array(df_out['eff'])
                 gpix_var[yyyyi, lati, loni] = df_out['rainfed'][0]
+                etbm_var[ti1:ti2,
+                         lati, loni] = pd.np.array(df_out['et_blue'])
+                etgm_var[ti1:ti2,
+                         lati, loni] = pd.np.array(df_out['et_green'])
     # Calculate yearly variables
     print 'Calculating values per year...'
     for yyyy in years_ls:
