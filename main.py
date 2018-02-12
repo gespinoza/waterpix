@@ -322,6 +322,7 @@ def run(input_nc, output_nc,
         phi[np.isinf(phi)] = np.nan
         phi[phi == 0] = np.nan
         et_p_bk = budyko_v(phi)
+        et_p_bk[np.isnan(et_p_bk)] = 0
         green_et = np.minimum(1.1*et_p_bk*p, et)
         blue_et = et - green_et
         green_et_yr = np.nansum(green_et, axis=0)
