@@ -80,16 +80,17 @@ def flows_calculations_first_round(infz, df, pixel_pars,
     df['Rest_Term'] = df['p'] - df['et'] - df['Qsw'] - df['dsm']
     df['Rest_Term_pos'] = df['Rest_Term'].apply(pos_func, 'columns')
 #    rest_term_sum = df['Rest_Term_pos'].sum()
-    # Correction of percolation using baseflow
+#    # Correction of percolation using baseflow
 #    if rest_term_sum > 0:
 #        corr_factor = max(1, df['Qgw'].sum()/rest_term_sum)
 #    else:
-    corr_factor = 1
-    df['perc'] = corr_factor * df['Rest_Term'].apply(pos_func, 'columns')
-#    df['perc'] = df['Rest_Term'].apply(pos_func, 'columns')
-#    df['Qgw'] = df['Qgw']*1.0/corr_factor
+#        corr_factor = 1
+#    df['perc'] = corr_factor * df['Rest_Term'].apply(pos_func, 'columns')
+    df['perc'] = df['Rest_Term_pos']
     # Error calculation
     flows = sum(df['Qsw']) + sum(df['Qgw'])
+#    flows = sum(df['Qsw']) +sum(df['Rest_Term'] )
+    
     error = (p_et_dsm - flows) ** 2
     # Return error or data frame
     if return_error:
@@ -124,7 +125,7 @@ def calculate_second_round(df, pixel_pars, default_eff,
     df['Qtot'] = df['Qsw'] + df['Qgw']
     # Output data frame
     df_out = df[['Qsw', 'delta_Qsw', 'Qgw', 'Qtot', 'dsm', 'infz', 'thetarz',
-                 'perc', 'delta_perc', 'supply', 'eff', 'rainfed','et_blue','et_green']]
+                 'perc', 'delta_perc', 'supply', 'eff', 'rainfed']]
     # Return data frame
     return df_out
 
@@ -146,7 +147,6 @@ def flows_calculations_second_round(infz, df, pixel_pars, default_eff,
     df['phi'] = df['phi'].apply(zeros_and_negatives, 'columns')
     df['budyko'] = df['phi'].apply(budyko, 'columns')
     df['et_green'] = pd.DataFrame([1.1*df['budyko']*df['p'], df['et']]).min()
-#    df['et_green'].replace(np.nan, 0.)
     et_green_sum = df['et_green'].sum()
     if et_green_sum > 0:
         df['et_green'] = (green_et_yr/et_green_sum)*df['et_green']
@@ -174,8 +174,6 @@ def flows_calculations_second_round(infz, df, pixel_pars, default_eff,
 #        corr_factor = 1
     corr_factor = 1
     df['perc_green'] = corr_factor * df['Rest_Term'].apply(pos_func, 'columns')
-#    df['perc_green'] = df['Rest_Term'].apply(pos_func, 'columns')
-#    df['Qgw_green'] = df['Qgw_green']*1.0/corr_factor
     # Check for months without supply and correct percolation
     for index, row in df.iterrows():
         if row['et'] - row['et_green'] < tolerance_monthly_greenpx:
@@ -183,7 +181,6 @@ def flows_calculations_second_round(infz, df, pixel_pars, default_eff,
         else:
             df.set_value(index, 'perc', row['perc'])
             df['perc_green'] = corr_factor * df['Rest_Term2'].apply(pos_func, 'columns')
-
     # Incremental percolation
     df['delta_perc_diff'] = df['perc'] - df['perc_green']
     df['delta_perc'] = df['delta_perc_diff'].apply(pos_func, 'columns')
@@ -193,8 +190,8 @@ def flows_calculations_second_round(infz, df, pixel_pars, default_eff,
         df['delta_Qsw'] = 0.0
         df['Qsw'] = df['Qsw_green']
         df['Qgw'] = df['Qgw_green']
-        df['supply'] = 0
-        df['eff'] = 0
+        df['supply'] = -9999
+        df['eff'] = -9999
         df['rainfed'] = 1
     else:
         # Inc. runoff proportional to SCS equation, find equality factor
@@ -214,10 +211,19 @@ def flows_calculations_second_round(infz, df, pixel_pars, default_eff,
         maski = (df['supply'] <= 0) | (df['delta_Qsw'] +
                                        df['delta_perc'] >= df['supply'])
         if np.any(maski):
+#            df['Qsw'][maski] = df['Qsw_green'][maski] + \
+#                df['delta_Qsw'][maski]
+#            df['Qgw'] = baseflow_calculation(np.array(df['Qsw']),
+#                                             baseflow_filter, qratio)
+#            df['eff'][maski] = default_eff
+#            df['supply'][maski] = (1/(1 - default_eff)) * (
+#                df['delta_Qsw'][maski] + df['delta_perc'][maski])
             df['eff'][maski] = default_eff         
             df['supply'][maski] = 1/default_eff * df['et_blue'][maski]
             df['delta_perc'][maski] = df['supply'][maski] * (1-default_eff) - \
                 df['delta_Qsw'][maski]
+#            df['delta_Qsw'][maski] = df['supply'][maski] * (1-default_eff) - \
+#                df['delta_perc'][maski]
             df['Qsw'][maski] = df['Qsw_green'][maski] + \
                 df['delta_Qsw'][maski]
             df['perc'][maski] = df['perc_green'][maski] + \
@@ -229,13 +235,9 @@ def flows_calculations_second_round(infz, df, pixel_pars, default_eff,
                 df['Qsw'][maskj] = df['Qsw_green'][maskj] + \
                     df['delta_Qsw'][maskj]
                 df['perc'][maskj] = df['perc_green'][maskj] + \
-                    df['delta_perc'][maskj]            
-            
-#            df['Qgw'] = baseflow_calculation(np.array(df['Qsw']),
-#                                             baseflow_filter, qratio)
-#            df['eff'][maski] = default_eff
-#            df['supply'][maski] = (1/(1 - default_eff)) * (
-#                df['delta_Qsw'][maski] + df['delta_perc'][maski])
+                    df['delta_perc'][maskj] 
+            df['Qgw'] = baseflow_calculation(np.array(df['Qsw']),
+                                             baseflow_filter, qratio)
     # Return data frame
     return df
 
@@ -255,11 +257,8 @@ def incremental_runoff_calculation(factor, df, infz,
             df.set_value(index, 'delta_Qsw', 0.0)
             df.set_value(index, 'Qsw', row['Qsw_green'])
             df.set_value(index, 'Qgw', row['Qgw_green'])
-            df.set_value(index, 'supply', 0) # cmi001
-            df.set_value(index, 'eff', 0) # cmi001
-            df.set_value(index, 'et_green', row['et']) # cmi001
-            df.set_value(index, 'et_blue', 0) # cmi001
-            df.set_value(index, 'delta_perc', 0) # cmi001
+            df.set_value(index, 'supply', -9999)
+            df.set_value(index, 'eff', -9999)
         else:
             # Supply and incremental surface runoff
             delta_Qsw_func = lambda delta_Qsw_value: delta_Qsw_value - factor*(
@@ -269,12 +268,18 @@ def incremental_runoff_calculation(factor, df, infz,
                       row['Qsw_green'] - delta_Qsw_value) +
                     infz*(row['thetasat'] - row['theta0']))
             delta_Qsw = max(0, fsolve(delta_Qsw_func, 0.0))
-#            supply_value = -(row['p'] - row['et'] - row['perc'] -
-#                                 row['Qsw_green'] - delta_Qsw - row['dsm'])
             delta_perc = row['delta_perc']
-            supply_value = max(row['et_blue'] + delta_Qsw + delta_perc,
+            supply_value = max(row['et_blue']+ delta_Qsw + delta_perc,
                                -(row['p'] - row['et'] - row['perc'] -
                                  row['Qsw_green'] - delta_Qsw - row['dsm']))
+#            supply_value = (row['et_blue']+ delta_Qsw + delta_perc)
+#            supply_diff = row['et_blue']+ delta_Qsw + delta_perc + (
+#                    row['p'] - row['et'] - row['perc'] -
+#                    row['Qsw_green'] - delta_Qsw - row['dsm'])
+#
+#            supply_value = max(row['et_blue'],
+#                               -(row['p'] - row['et'] - row['perc'] -
+#                                 row['Qsw_green'] - delta_Qsw))
             # Calculation
             
             eff = (supply_value - delta_Qsw - delta_perc)/supply_value
