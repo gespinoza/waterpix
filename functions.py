@@ -125,7 +125,8 @@ def calculate_second_round(df, pixel_pars, default_eff,
     df['Qtot'] = df['Qsw'] + df['Qgw']
     # Output data frame
     df_out = df[['Qsw', 'delta_Qsw', 'Qgw', 'Qtot', 'dsm', 'infz', 'thetarz',
-                 'perc', 'delta_perc', 'supply', 'eff', 'rainfed']]
+                 'perc', 'delta_perc', 'supply', 'eff', 'rainfed',
+                 'et_blue','et_green']]
     # Return data frame
     return df_out
 
@@ -190,9 +191,11 @@ def flows_calculations_second_round(infz, df, pixel_pars, default_eff,
         df['delta_Qsw'] = 0.0
         df['Qsw'] = df['Qsw_green']
         df['Qgw'] = df['Qgw_green']
-        df['supply'] = -9999
+        df['supply'] = 0
         df['eff'] = -9999
         df['rainfed'] = 1
+        df['et_blue'] = 0
+        df['et_green'] = df['et']
     else:
         # Inc. runoff proportional to SCS equation, find equality factor
         minerror_f = minimize_scalar(incremental_runoff_calculation,
@@ -257,8 +260,10 @@ def incremental_runoff_calculation(factor, df, infz,
             df.set_value(index, 'delta_Qsw', 0.0)
             df.set_value(index, 'Qsw', row['Qsw_green'])
             df.set_value(index, 'Qgw', row['Qgw_green'])
-            df.set_value(index, 'supply', -9999)
+            df.set_value(index, 'supply', 0)
             df.set_value(index, 'eff', -9999)
+            df.set_value(index, 'et_green', row['et']) # cmi001
+            df.set_value(index, 'et_blue', 0) # cmi001
         else:
             # Supply and incremental surface runoff
             delta_Qsw_func = lambda delta_Qsw_value: delta_Qsw_value - factor*(

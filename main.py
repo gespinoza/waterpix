@@ -206,6 +206,12 @@ def run(input_nc, output_nc,
                                     fill_value=std_fv)
     etg_var.long_name = 'Green evapotranspiration'
     etg_var.units = 'mm/year'
+    
+    etgm_var = out_nc.createVariable('ETgreen_M', 'f8',
+                                    ('time_yyyymm', 'latitude', 'longitude'),
+                                    fill_value=std_fv)
+    etgm_var.long_name = 'Green evapotranspiration m'
+    etgm_var.units = 'mm/month'
 
     etb_var = out_nc.createVariable('ETblue_Y', 'f8',
                                     ('time_yyyy', 'latitude', 'longitude'),
@@ -213,6 +219,14 @@ def run(input_nc, output_nc,
     # Blue Evapotranspiration (yearly)
     etb_var.long_name = 'Blue evapotranspiration'
     etb_var.units = 'mm/year'
+    
+    etbm_var = out_nc.createVariable('ETblue_M', 'f8',
+                                    ('time_yyyymm', 'latitude', 'longitude'),
+                                    fill_value=std_fv)
+    etbm_var.long_name = 'Blue evapotranspiration m'
+    etbm_var.units = 'mm/month'
+
+    
     # Rainfed pixels
     gpix_var = out_nc.createVariable('RainfedPixels_Y', 'l',
                                      ('time_yyyy', 'latitude', 'longitude'),
@@ -434,6 +448,10 @@ def run(input_nc, output_nc,
                                  lati, loni] = float(df_out['infz'][0])
                         rco_var[yyyyi,
                                 lati, loni] = 0
+                        etbm_var[ti1:ti2,
+                                lati, loni] = 0
+                        etgm_var[ti1:ti2,
+                                lati, loni] = np.array(df['et'])
                         sup_var[ti1:ti2,
                                 lati, loni] = 0
                         incss_var[ti1:ti2,
@@ -618,6 +636,10 @@ def run(input_nc, output_nc,
                 effi_var[ti1:ti2,
                          lati, loni] = pd.np.array(df_out['eff'])
                 gpix_var[yyyyi, lati, loni] = df_out['rainfed'][0]
+                etbm_var[ti1:ti2,
+                         lati, loni] = pd.np.array(df_out['et_blue'])
+                etgm_var[ti1:ti2,
+                         lati, loni] = pd.np.array(df_out['et_green'])
     # Calculate yearly variables
     print 'Calculating values per year...'
     for yyyy in years_ls:
