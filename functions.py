@@ -239,7 +239,7 @@ def flows_calculations_second_round(infz, df, pixel_pars, default_eff,
                     df['delta_Qsw'][maskj]
                 df['perc'][maskj] = df['perc_green'][maskj] + \
                     df['delta_perc'][maskj] 
-            df['Qgw'] = baseflow_calculation(np.array(df['Qsw']),
+        df['Qgw'] = baseflow_calculation(np.array(df['Qsw_green']),
                                              baseflow_filter, qratio)
     # Return data frame
     return df
@@ -291,11 +291,11 @@ def incremental_runoff_calculation(factor, df, infz,
             # Compute values
             Qsw = row['Qsw_green'] + delta_Qsw
             # If Qsw used instead of Qsw_green the values of Qgw are very large
-            Qgw = row['Qsw_green'] / row['qratio'] - row['Qsw_green']
+#            Qgw = row['Qsw_green'] / row['qratio'] - row['Qsw_green']
             # Save values
             df.set_value(index, 'delta_Qsw', delta_Qsw)
             df.set_value(index, 'Qsw', Qsw)
-            df.set_value(index, 'Qgw', Qgw)
+#            df.set_value(index, 'Qgw', Qgw)
             df.set_value(index, 'supply', supply_value)
             df.set_value(index, 'eff', eff)
             rainfed = 0
