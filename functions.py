@@ -211,36 +211,36 @@ def flows_calculations_second_round(infz, df, pixel_pars, default_eff,
         # delta_Qsw < 0, that means Qsw is very small ~ 0
         df['delta_Qsw'] = df['delta_Qsw'].apply(pos_func, 'columns')
         # If negative supply or inc. runoff, assume default water use eff.
-        maski = (df['supply'] <= 0) | (df['delta_Qsw'] +
-                                       df['delta_perc'] >= df['supply'])
-        if np.any(maski):
+#        maski = (df['supply'] < 0) | (df['delta_Qsw'] +
+#                                       df['delta_perc'] > df['supply'])
+#        if np.any(maski):
+##            df['Qsw'][maski] = df['Qsw_green'][maski] + \
+##                df['delta_Qsw'][maski]
+##            df['Qgw'] = baseflow_calculation(np.array(df['Qsw']),
+##                                             baseflow_filter, qratio)
+##            df['eff'][maski] = default_eff
+##            df['supply'][maski] = (1/(1 - default_eff)) * (
+##                df['delta_Qsw'][maski] + df['delta_perc'][maski])
+#            df['eff'][maski] = default_eff         
+#            df['supply'][maski] = 1/default_eff * df['et_blue'][maski]
+#            df['delta_perc'][maski] = df['supply'][maski] * (1-default_eff) - \
+#                df['delta_Qsw'][maski]
+##            df['delta_Qsw'][maski] = df['supply'][maski] * (1-default_eff) - \
+##                df['delta_perc'][maski]
 #            df['Qsw'][maski] = df['Qsw_green'][maski] + \
 #                df['delta_Qsw'][maski]
-#            df['Qgw'] = baseflow_calculation(np.array(df['Qsw']),
-#                                             baseflow_filter, qratio)
-#            df['eff'][maski] = default_eff
-#            df['supply'][maski] = (1/(1 - default_eff)) * (
-#                df['delta_Qsw'][maski] + df['delta_perc'][maski])
-            df['eff'][maski] = default_eff         
-            df['supply'][maski] = 1/default_eff * df['et_blue'][maski]
-            df['delta_perc'][maski] = df['supply'][maski] * (1-default_eff) - \
-                df['delta_Qsw'][maski]
-#            df['delta_Qsw'][maski] = df['supply'][maski] * (1-default_eff) - \
+#            df['perc'][maski] = df['perc_green'][maski] + \
 #                df['delta_perc'][maski]
-            df['Qsw'][maski] = df['Qsw_green'][maski] + \
-                df['delta_Qsw'][maski]
-            df['perc'][maski] = df['perc_green'][maski] + \
-                df['delta_perc'][maski]
-            maskj = (df['delta_perc'] <= 0)
-            if np.any(maskj):
-                df['delta_Qsw'][maskj] = 0
-                df['delta_perc'][maskj] = df['supply'][maskj] * (1-default_eff)
-                df['Qsw'][maskj] = df['Qsw_green'][maskj] + \
-                    df['delta_Qsw'][maskj]
-                df['perc'][maskj] = df['perc_green'][maskj] + \
-                    df['delta_perc'][maskj] 
-        df['Qgw'] = baseflow_calculation(np.array(df['Qsw_green']),
-                                             baseflow_filter, qratio)
+#            maskj = (df['delta_perc'] <= 0)
+#            if np.any(maskj):
+#                df['delta_Qsw'][maskj] = 0
+#                df['delta_perc'][maskj] = df['supply'][maskj] * (1-default_eff)
+#                df['Qsw'][maskj] = df['Qsw_green'][maskj] + \
+#                    df['delta_Qsw'][maskj]
+#                df['perc'][maskj] = df['perc_green'][maskj] + \
+#                    df['delta_perc'][maskj] 
+#        df['Qgw'] = baseflow_calculation(np.array(df['Qsw_green']),
+#                                             baseflow_filter, qratio)
     # Return data frame
     return df
 
@@ -274,9 +274,16 @@ def incremental_runoff_calculation(factor, df, infz,
                     infz*(row['thetasat'] - row['theta0']))
             delta_Qsw = max(0, fsolve(delta_Qsw_func, 0.0))
             delta_perc = row['delta_perc']
-            supply_value = max(row['et_blue']+ delta_Qsw + delta_perc,
-                               -(row['p'] - row['et'] - row['perc'] -
-                                 row['Qsw_green'] - delta_Qsw - row['dsm']))
+#            supply_value = max(row['et_blue']+ delta_Qsw + delta_perc,
+#                               -(row['p'] - row['et'] - row['perc'] -
+#                                 row['Qsw_green'] - delta_Qsw - row['dsm']))
+            supply_value = row['et_blue']+ delta_Qsw + delta_perc
+            supply_value_wb = -(row['p'] - row['et'] - row['perc'] -
+                                 row['Qsw_green'] - delta_Qsw - row['dsm'])
+            green_perc_err = supply_value - supply_value_wb
+            new_perc_green = max(row['perc_green'] + green_perc_err,0)
+#            new_perc_green[np.where(new_perc_green<0)] = 0
+            new_perc = new_perc_green + delta_perc
 #            supply_value = (row['et_blue']+ delta_Qsw + delta_perc)
 #            supply_diff = row['et_blue']+ delta_Qsw + delta_perc + (
 #                    row['p'] - row['et'] - row['perc'] -
@@ -298,6 +305,8 @@ def incremental_runoff_calculation(factor, df, infz,
 #            df.set_value(index, 'Qgw', Qgw)
             df.set_value(index, 'supply', supply_value)
             df.set_value(index, 'eff', eff)
+            df.set_value(index, 'perc_green', new_perc_green)
+            df.set_value(index, 'perc', new_perc)
             rainfed = 0
     # Store rainfed value
     df['rainfed'] = rainfed
@@ -436,7 +445,7 @@ def baseflow_calculation(qsw_vector, filter_par, qratio):
     '''
     Calculate the baseflow using the runoff ratio and the surface runoff
     '''
-    Qgw_tot = qsw_vector.sum() * qratio
+    Qgw_tot = qsw_vector.sum() * (1-qratio)/qratio
     q0 = fsolve(baseflow_function, 0.0, [qsw_vector, filter_par,
                                          qratio, Qgw_tot, True])
     Qgw_vector = baseflow_function(q0, [qsw_vector, filter_par,
@@ -456,7 +465,7 @@ def baseflow_function(q0, args):
         q_temp[i] = filter_par*q_temp[i-1] + 0.5*(1 + filter_par)*(
             qsw_vector[i] - qsw_vector[i-1])
     # Baseflow
-    qgw_vector = qratio*(qsw_vector - q_temp)
+    qgw_vector = (1-qratio)/qratio*(qsw_vector - q_temp)
     # Error calculation
     error = Qgw_tot - qgw_vector.sum()
     # Return error or vector
