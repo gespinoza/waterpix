@@ -49,6 +49,12 @@ def calculate_first_round(df, pixel_pars, infz_bounds,
         df = flows_calculations_first_round(minerror_infz.x, df,
                                             (qratio, baseflow_filter,
                                              p_et_dsm), False)
+        # Water balance fix for when percolation is artificially set to 0
+        maski = (df['p'] - df['et'] - df['Qsw'] - df['dsm']) < 0
+        if np.any(maski):
+            df['Qsw'][maski] = df['p'][maski] - df['et'][maski] - df['dsm'][maski]
+        df['Qsw'] = df['Qsw'].apply(pos_func, 'columns')    
+            
         if sqrt(minerror_infz.fun) > tolerance_yearly_waterbal:
             df = return_empty_df_columns(df)
             second_round = 30
@@ -239,8 +245,8 @@ def flows_calculations_second_round(infz, df, pixel_pars, default_eff,
 #                    df['delta_Qsw'][maskj]
 #                df['perc'][maskj] = df['perc_green'][maskj] + \
 #                    df['delta_perc'][maskj] 
-#        df['Qgw'] = baseflow_calculation(np.array(df['Qsw_green']),
-#                                             baseflow_filter, qratio)
+        df['Qgw'] = baseflow_calculation(np.array(df['Qsw_green']),
+                                             baseflow_filter, qratio)
     # Return data frame
     return df
 
