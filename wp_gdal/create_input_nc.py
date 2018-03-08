@@ -129,54 +129,63 @@ def create_input_nc(start_date, years,
                                    fill_value=-9999)
     p_var.long_name = 'Precipitation'
     p_var.units = 'mm/month'
+    p_var.grid_mapping = 'crs'
 
     py_var = nc_file.createVariable('Precipitation_Y', 'f8',
                                     ('time_yyyy', 'latitude', 'longitude'),
                                     fill_value=-9999)
     py_var.long_name = 'Precipitation'
     py_var.units = 'mm/year'
+    py_var.grid_mapping = 'crs'
 
     et_var = nc_file.createVariable('Evapotranspiration_M', 'f8',
                                     ('time_yyyymm', 'latitude', 'longitude'),
                                     fill_value=-9999)
     et_var.long_name = 'Evapotranspiration'
     et_var.units = 'mm/month'
+    et_var.grid_mapping = 'crs'
 
     ety_var = nc_file.createVariable('Evapotranspiration_Y', 'f8',
                                      ('time_yyyy', 'latitude', 'longitude'),
                                      fill_value=-9999)
     ety_var.long_name = 'Evapotranspiration'
     ety_var.units = 'mm/year'
+    ety_var.grid_mapping = 'crs'
 
     eto_var = nc_file.createVariable('ReferenceET_M', 'f8',
                                      ('time_yyyymm', 'latitude', 'longitude'),
                                      fill_value=-9999)
     eto_var.long_name = 'Reference Evapotranspiration'
     eto_var.units = 'mm/month'
+    eto_var.grid_mapping = 'crs'
 
     lai_var = nc_file.createVariable('LeafAreaIndex_M', 'f8',
                                      ('time_yyyymm', 'latitude', 'longitude'),
                                      fill_value=-9999)
     lai_var.long_name = 'Leaf Area Index'
     lai_var.units = 'm2/m2'
+    lai_var.grid_mapping = 'crs'
 
     swi_var = nc_file.createVariable('SWI_M', 'f8',
                                      ('time_yyyymm', 'latitude', 'longitude'),
                                      fill_value=-9999)
     swi_var.long_name = 'Soil Water Index - Monthly mean'
     swi_var.units = '%'
+    swi_var.grid_mapping = 'crs'
 
     swio_var = nc_file.createVariable('SWIo_M', 'f8',
                                       ('time_yyyymm', 'latitude', 'longitude'),
                                       fill_value=-9999)
     swio_var.long_name = 'Soil water index - First day of the month'
     swio_var.units = '%'
+    swio_var.grid_mapping = 'crs'
 
     swix_var = nc_file.createVariable('SWIx_M', 'f8',
                                       ('time_yyyymm', 'latitude', 'longitude'),
                                       fill_value=-9999)
     swix_var.long_name = 'Soil water index - Last day of the month'
     swix_var.units = '%'
+    swix_var.grid_mapping = 'crs'
 
     qratio_var = nc_file.createVariable('RunoffRatio_Y', 'f8',
                                         ('time_yyyy',
@@ -184,6 +193,7 @@ def create_input_nc(start_date, years,
                                         fill_value=-9999)
     qratio_var.long_name = 'Runoff ratio'
     qratio_var.units = '-'
+    qratio_var.grid_mapping = 'crs'
 
     rainydays_var = nc_file.createVariable('RainyDays_M', 'f8',
                                            ('time_yyyymm',
@@ -191,23 +201,27 @@ def create_input_nc(start_date, years,
                                            fill_value=-9999)
     rainydays_var.long_name = 'Number of rainy days per month'
     rainydays_var.units = 'No. rainy days/month'
+    rainydays_var.grid_mapping = 'crs'
 
     thetasat_var = nc_file.createVariable('SaturatedWaterContent', 'f8',
                                           ('latitude', 'longitude'),
                                           fill_value=-9999)
     thetasat_var.long_name = 'Saturated water content (top soil)'
     thetasat_var.units = 'cm3/cm3'
+    thetasat_var.grid_mapping = 'crs'
 
     rootdepth_var = nc_file.createVariable('RootDepth', 'f8',
                                            ('latitude', 'longitude'),
                                            fill_value=-9999)
     rootdepth_var.long_name = 'Root depth'
     rootdepth_var.units = 'mm'
+    rootdepth_var.grid_mapping = 'crs'
 
     basinmask_var = nc_file.createVariable('BasinBuffer', 'l',
                                            ('latitude', 'longitude'),
                                            fill_value=0)
     basinmask_var.long_name = 'Basin buffer'
+    basinmask_var.grid_mapping = 'crs'
 
     # Load data
     lat_var[:] = lat_ls

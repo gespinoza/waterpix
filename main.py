@@ -134,133 +134,152 @@ def run(input_nc, output_nc,
                                    fill_value=std_fv)
     ss_var.long_name = 'Surface runoff (fast)'
     ss_var.units = 'mm/month'
+    ss_var.grid_mapping = 'crs'
     # Surface runoff (yearly)
     ssy_var = out_nc.createVariable('SurfaceRunoff_Y', 'f8',
                                     ('time_yyyy', 'latitude', 'longitude'),
                                     fill_value=std_fv)
     ssy_var.long_name = 'Surface runoff (fast)'
     ssy_var.units = 'mm/year'
+    ssy_var.grid_mapping = 'crs'
     # Baseflow (monthly)
     bf_var = out_nc.createVariable('Baseflow_M', 'f8',
                                    ('time_yyyymm', 'latitude', 'longitude'),
                                    fill_value=std_fv)
     bf_var.long_name = 'Baseflow (slow)'
     bf_var.units = 'mm/month'
+    bf_var.grid_mapping = 'crs'
     # Baseflow (yearly)
     bfy_var = out_nc.createVariable('Baseflow_Y', 'f8',
                                     ('time_yyyy', 'latitude', 'longitude'),
                                     fill_value=std_fv)
     bfy_var.long_name = 'Baseflow (slow)'
     bfy_var.units = 'mm/year'
+    bfy_var.grid_mapping = 'crs'
     # Total runoff (monthly)
     sr_var = out_nc.createVariable('TotalRunoff_M', 'f8',
                                    ('time_yyyymm', 'latitude', 'longitude'),
                                    fill_value=std_fv)
     sr_var.long_name = 'Total runoff'
     sr_var.units = 'mm/month'
+    sr_var.grid_mapping = 'crs'
     # Total runoff (yearly)
     sry_var = out_nc.createVariable('TotalRunoff_Y', 'f8',
                                     ('time_yyyy', 'latitude', 'longitude'),
                                     fill_value=std_fv)
     sry_var.long_name = 'Total runoff'
     sry_var.units = 'mm/year'
+    sry_var.grid_mapping = 'crs'
     # Storage change - soil moisture (monthly)
     dsm_var = out_nc.createVariable('StorageChange_M', 'f8',
                                     ('time_yyyymm', 'latitude', 'longitude'),
                                     fill_value=std_fv)
     dsm_var.long_name = 'Change in soil moisture storage'
     dsm_var.units = 'mm/month'
+    dsm_var.grid_mapping = 'crs'
     # Storage change - soil moisture (yearly)
     dsmy_var = out_nc.createVariable('StorageChange_Y', 'f8',
                                      ('time_yyyy', 'latitude', 'longitude'),
                                      fill_value=std_fv)
     dsmy_var.long_name = 'Change in soil moisture storage'
     dsmy_var.units = 'mm/year'
+    dsmy_var.grid_mapping = 'crs'
     # Percolation (monthly)
     per_var = out_nc.createVariable('Percolation_M', 'f8',
                                     ('time_yyyymm', 'latitude', 'longitude'),
                                     fill_value=std_fv)
     per_var.long_name = 'Percolation'
     per_var.units = 'mm/month'
+    per_var.grid_mapping = 'crs'
     # Percolation (yearly)
     pery_var = out_nc.createVariable('Percolation_Y', 'f8',
                                      ('time_yyyy', 'latitude', 'longitude'),
                                      fill_value=std_fv)
     pery_var.long_name = 'Percolation'
     pery_var.units = 'mm/year'
+    pery_var.grid_mapping = 'crs'
     # Supply (monthly)
     sup_var = out_nc.createVariable('Supply_M', 'f8',
                                     ('time_yyyymm', 'latitude', 'longitude'),
                                     fill_value=std_fv)
     sup_var.long_name = 'Supply'
     sup_var.units = 'mm/month'
+    sup_var.grid_mapping = 'crs'
     # Supply (yearly)
     supy_var = out_nc.createVariable('Supply_Y', 'f8',
                                      ('time_yyyy', 'latitude', 'longitude'),
                                      fill_value=std_fv)
     supy_var.long_name = 'Supply'
     supy_var.units = 'mm/year'
+    supy_var.grid_mapping = 'crs'
     # Green Evapotranspiration (yearly)
     etg_var = out_nc.createVariable('ETgreen_Y', 'f8',
                                     ('time_yyyy', 'latitude', 'longitude'),
                                     fill_value=std_fv)
     etg_var.long_name = 'Green evapotranspiration'
     etg_var.units = 'mm/year'
-    
+    etg_var.grid_mapping = 'crs'
+    # Green Evapotranspiration (monthly)
     etgm_var = out_nc.createVariable('ETgreen_M', 'f8',
                                     ('time_yyyymm', 'latitude', 'longitude'),
                                     fill_value=std_fv)
     etgm_var.long_name = 'Green evapotranspiration m'
     etgm_var.units = 'mm/month'
-
+    etgm_var.grid_mapping = 'crs'
+    # Blue Evapotranspiration (yearly)
     etb_var = out_nc.createVariable('ETblue_Y', 'f8',
                                     ('time_yyyy', 'latitude', 'longitude'),
                                     fill_value=std_fv)
-    # Blue Evapotranspiration (yearly)
     etb_var.long_name = 'Blue evapotranspiration'
     etb_var.units = 'mm/year'
-    
+    etb_var.grid_mapping = 'crs'
+    # Blue Evapotranspiration (monthly)
     etbm_var = out_nc.createVariable('ETblue_M', 'f8',
                                     ('time_yyyymm', 'latitude', 'longitude'),
                                     fill_value=std_fv)
     etbm_var.long_name = 'Blue evapotranspiration m'
     etbm_var.units = 'mm/month'
-
-    
+    etbm_var.grid_mapping = 'crs'
     # Rainfed pixels
     gpix_var = out_nc.createVariable('RainfedPixels_Y', 'l',
                                      ('time_yyyy', 'latitude', 'longitude'),
                                      fill_value=std_fv)
     gpix_var.long_name = 'Rainfed pixels'
     gpix_var.units = '-'
+    gpix_var.grid_mapping = 'crs'
     # Round code (yearly)
     rco_var = out_nc.createVariable('RoundCode', 'l',
                                     ('time_yyyy', 'latitude', 'longitude'),
                                     fill_value=0.0)
+    rco_var.grid_mapping = 'crs'
     # Root depth soil moisture (monthly)
     rdsm_var = out_nc.createVariable('RootDepthSoilMoisture_M', 'f8',
                                      ('time_yyyymm', 'latitude', 'longitude'),
                                      fill_value=rootdepth_fv)
     rdsm_var.long_name = 'Root depth soil moisture'
     rdsm_var.units = 'cm3/cm3'
+    rdsm_var.grid_mapping = 'crs'
     # Calibration parameter - infiltration depth (yearly)
     infz_var = out_nc.createVariable('InfiltrationDepth_Y', 'f8',
                                      ('time_yyyy', 'latitude', 'longitude'),
                                      fill_value=std_fv)
     infz_var.long_name = 'Infiltration depth'
     infz_var.units = 'mm'
+    infz_var.grid_mapping = 'crs'
     # Incremental surface runoff (monthly)
     incss_var = out_nc.createVariable('IncrementalRunoff_M', 'f8',
                                       ('time_yyyymm', 'latitude', 'longitude'),
                                       fill_value=std_fv)
     incss_var.long_name = 'Incremental runoff'
     incss_var.units = 'mm/month'
+    incss_var.grid_mapping = 'crs'
     # Incremental surface runoff (yearly)
     incssy_var = out_nc.createVariable('IncrementalRunoff_Y', 'f8',
                                        ('time_yyyy', 'latitude', 'longitude'),
                                        fill_value=std_fv)
     incssy_var.long_name = 'Incremental runoff'
     incssy_var.units = 'mm/year'
+    incssy_var.grid_mapping = 'crs'
     # Incremental percolation (monthly)
     incper_var = out_nc.createVariable('IncrementalPercolation_M', 'f8',
                                        ('time_yyyymm',
@@ -268,34 +287,40 @@ def run(input_nc, output_nc,
                                        fill_value=std_fv)
     incper_var.long_name = 'Incremental Percolation'
     incper_var.units = 'mm/month'
+    incper_var.grid_mapping = 'crs'
     # Incremental percolation (yearly)
     incpery_var = out_nc.createVariable('IncrementalPercolation_Y', 'f8',
                                         ('time_yyyy', 'latitude', 'longitude'),
                                         fill_value=std_fv)
     incpery_var.long_name = 'Incremental Percolation'
     incpery_var.units = 'mm/year'
+    incpery_var.grid_mapping = 'crs'
     # Water use efficiency (monthly)
     effi_var = out_nc.createVariable('WaterUseEfficiency_M', 'f8',
                                      ('time_yyyymm', 'latitude', 'longitude'),
                                      fill_value=std_fv)
     effi_var.long_name = 'Water use efficiency'
     effi_var.units = '-'
+    effi_var.grid_mapping = 'crs'
     # Water use efficiency (yearly)
     effiy_var = out_nc.createVariable('WaterUseEfficiency_Y', 'f8',
                                       ('time_yyyy', 'latitude', 'longitude'),
                                       fill_value=std_fv)
     effiy_var.long_name = 'Water use efficiency'
     effiy_var.units = '-'
+    effiy_var.grid_mapping = 'crs'
     # Percolation fit - parameter 'a' (yearly)
     a_var = out_nc.createVariable('a_Y', 'f8',
                                   ('time_yyyy', 'latitude', 'longitude'),
                                   fill_value=std_fv)
+    a_var.grid_mapping = 'crs'
     a_var.long_name = 'a parameter in the eqn: perc = a*rdsm^b'
     # Percolation fit - parameter 'b' (yearly)
     b_var = out_nc.createVariable('b_Y', 'f8',
                                   ('time_yyyy', 'latitude', 'longitude'),
                                   fill_value=std_fv)
     b_var.long_name = 'b parameter in the eqn: perc = a*rdsm^b'
+    b_var.grid_mapping = 'crs'
     # Pre-process first round
     print 'Evapotranspiration separation (blue & green)'
     budyko_v = np.vectorize(budyko)
