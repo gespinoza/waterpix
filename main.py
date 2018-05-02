@@ -375,6 +375,7 @@ def run(input_nc, output_nc,
         blue_et = et - green_et
         green_et_yr = np.nansum(green_et, axis=0)
         blue_et_yr = np.nansum(blue_et, axis=0)
+        blue_et_yr[inp_bas_vals==0] = np.nan
         # Store values
         etg_var[yyyyi, :, :] = green_et_yr
         etb_var[yyyyi, :, :] = blue_et_yr
