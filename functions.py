@@ -216,35 +216,6 @@ def flows_calculations_second_round(infz, df, pixel_pars, default_eff,
         # if delta_Qsw + row['delta_perc'] >= supply_value and
         # delta_Qsw < 0, that means Qsw is very small ~ 0
         df['delta_Qsw'] = df['delta_Qsw'].apply(pos_func, 'columns')
-        # If negative supply or inc. runoff, assume default water use eff.
-#        maski = (df['supply'] < 0) | (df['delta_Qsw'] +
-#                                       df['delta_perc'] > df['supply'])
-#        if np.any(maski):
-##            df['Qsw'][maski] = df['Qsw_green'][maski] + \
-##                df['delta_Qsw'][maski]
-##            df['Qgw'] = baseflow_calculation(np.array(df['Qsw']),
-##                                             baseflow_filter, qratio)
-##            df['eff'][maski] = default_eff
-##            df['supply'][maski] = (1/(1 - default_eff)) * (
-##                df['delta_Qsw'][maski] + df['delta_perc'][maski])
-#            df['eff'][maski] = default_eff         
-#            df['supply'][maski] = 1/default_eff * df['et_blue'][maski]
-#            df['delta_perc'][maski] = df['supply'][maski] * (1-default_eff) - \
-#                df['delta_Qsw'][maski]
-##            df['delta_Qsw'][maski] = df['supply'][maski] * (1-default_eff) - \
-##                df['delta_perc'][maski]
-#            df['Qsw'][maski] = df['Qsw_green'][maski] + \
-#                df['delta_Qsw'][maski]
-#            df['perc'][maski] = df['perc_green'][maski] + \
-#                df['delta_perc'][maski]
-#            maskj = (df['delta_perc'] <= 0)
-#            if np.any(maskj):
-#                df['delta_Qsw'][maskj] = 0
-#                df['delta_perc'][maskj] = df['supply'][maskj] * (1-default_eff)
-#                df['Qsw'][maskj] = df['Qsw_green'][maskj] + \
-#                    df['delta_Qsw'][maskj]
-#                df['perc'][maskj] = df['perc_green'][maskj] + \
-#                    df['delta_perc'][maskj] 
         df['Qgw'] = baseflow_calculation(np.array(df['Qsw_green']),
                                              baseflow_filter, qratio)
     # Return data frame
@@ -274,9 +245,9 @@ def incremental_runoff_calculation(factor, df, infz,
             # Supply and incremental surface runoff
             delta_Qsw_func = lambda delta_Qsw_value: delta_Qsw_value - factor*(
                 row['p'] - row['et'] - row['perc'] -
-                row['Qsw_green'] - delta_Qsw_value)**2 / (
+                row['Qsw_green'] - delta_Qsw_value - row['dsm'])**2 / (
                     -(row['p'] - row['et'] - row['perc'] -
-                      row['Qsw_green'] - delta_Qsw_value) +
+                      row['Qsw_green'] - delta_Qsw_value - row['dsm']) +
                     infz*(row['thetasat'] - row['theta0']))
             delta_Qsw = max(0, fsolve(delta_Qsw_func, 0.0))
             delta_perc = row['delta_perc']
@@ -286,8 +257,9 @@ def incremental_runoff_calculation(factor, df, infz,
             supply_value = row['et_blue']+ delta_Qsw + delta_perc
             supply_value_wb = -(row['p'] - row['et'] - row['perc'] -
                                  row['Qsw_green'] - delta_Qsw - row['dsm'])
-            green_perc_err = supply_value - supply_value_wb
-            new_perc_green = max(row['perc_green'] + green_perc_err,0)
+#            green_perc_err = supply_value - supply_value_wb
+#            new_perc_green = max(row['perc_green'] + green_perc_err,0)
+            new_perc_green = row['perc_green']
 #            new_perc_green[np.where(new_perc_green<0)] = 0
             new_perc = new_perc_green + delta_perc
 #            supply_value = (row['et_blue']+ delta_Qsw + delta_perc)
@@ -300,7 +272,7 @@ def incremental_runoff_calculation(factor, df, infz,
 #                                 row['Qsw_green'] - delta_Qsw))
             # Calculation
             
-            eff = (supply_value - delta_Qsw - delta_perc)/supply_value
+            eff = (supply_value_wb - delta_Qsw - delta_perc)/supply_value_wb
             # Compute values
             Qsw = row['Qsw_green'] + delta_Qsw
             # If Qsw used instead of Qsw_green the values of Qgw are very large
@@ -309,7 +281,7 @@ def incremental_runoff_calculation(factor, df, infz,
             df.set_value(index, 'delta_Qsw', delta_Qsw)
             df.set_value(index, 'Qsw', Qsw)
 #            df.set_value(index, 'Qgw', Qgw)
-            df.set_value(index, 'supply', supply_value)
+            df.set_value(index, 'supply', supply_value_wb)
             df.set_value(index, 'eff', eff)
             df.set_value(index, 'perc_green', new_perc_green)
             df.set_value(index, 'perc', new_perc)

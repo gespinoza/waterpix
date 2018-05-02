@@ -12,6 +12,7 @@ import datetime as dt
 from warnings import filterwarnings
 import pandas as pd
 import netCDF4
+import csv
 from waterpix.functions import (calculate_first_round, calculate_second_round,
                                 return_empty_df_columns, get_neighbors,
                                 percolation_fit_error,
@@ -31,7 +32,29 @@ def run(input_nc, output_nc,
         et_separation_no_periods=2, baseflow_filter=0.5,
         perc_fit_parms_bounds=((0.1, 4.5), (7500, 10.0)),
         tolerance_monthly_greenpx=5, tolerance_yearly_waterbal=10,
-        incrunoff_propfactor_bounds=(1.0, 15.0)):
+        incrunoff_propfactor_bounds=(1.0, 15.0), logfile = False):
+    
+    if logfile:
+        logname = output_nc.split('.')[0]+'.txt'
+        csv_file = open(logname, 'wb')
+        writer = csv.writer(csv_file, delimiter=':')
+        writer.writerow(['input_nc',input_nc])
+        writer.writerow(['output_nc',output_nc])
+        writer.writerow(['default_thetasat',default_thetasat])
+        writer.writerow(['default_rootdepth',default_rootdepth])
+        writer.writerow(['default_eff',default_eff])
+        writer.writerow(['min_greenpx_proportion',min_greenpx_proportion])
+        writer.writerow(['min_qratio',min_qratio])
+        writer.writerow(['infz_bounds',infz_bounds])
+        writer.writerow(['perc_fit_min_no_of_values',perc_fit_min_no_of_values])
+        writer.writerow(['et_separation_no_periods',et_separation_no_periods])
+        writer.writerow(['baseflow_filter',baseflow_filter])
+        writer.writerow(['perc_fit_parms_bounds',perc_fit_parms_bounds])
+        writer.writerow(['tolerance_monthly_greenpx',tolerance_monthly_greenpx])
+        writer.writerow(['tolerance_yearly_waterbal',tolerance_yearly_waterbal])
+        writer.writerow(['incrunoff_propfactor_bounds',incrunoff_propfactor_bounds])
+        csv_file.close()
+        
     '''
     Executes the main module of waterpix
     '''
@@ -355,6 +378,8 @@ def run(input_nc, output_nc,
         # Store values
         etg_var[yyyyi, :, :] = green_et_yr
         etb_var[yyyyi, :, :] = blue_et_yr
+        # Correction for coastal no data areas in basinmask
+        blue_et_yr[np.where((green_et_yr==0) & (blue_et_yr==0))] = np.nan
         # Green pixels
         gpix_array = np.where(np.isclose(blue_et_yr, 0), 1,
                               np.where(inp_bas_vals, 0, np.nan))
@@ -406,16 +431,19 @@ def run(input_nc, output_nc,
                     swi[np.isclose(swi, swi_fv)] = np.nan
                     if np.isnan(swi).any():
                         swi_arr = np.array(ncv['SWI_M'])
+                        swi_arr[np.isclose(swi_arr, swi_fv)] = np.nan
                         swi = replace_with_closest(swi, swi_arr,
                                                    (lati, loni), (ti1, ti2))
                     swio[np.isclose(swio, swio_fv)] = np.nan
                     if np.isnan(swio).any():
                         swio_arr = np.array(ncv['SWIo_M'])
+                        swio_arr[np.isclose(swio_arr, swio_fv)] = np.nan
                         swio = replace_with_closest(swio, swio_arr,
                                                     (lati, loni), (ti1, ti2))
                     swix[np.isclose(swix, swix_fv)] = np.nan
                     if np.isnan(swix).any():
                         swix_arr = np.array(ncv['SWIx_M'])
+                        swix_arr[np.isclose(swix_arr, swix_fv)] = np.nan
                         swix = replace_with_closest(swix, swix_arr,
                                                     (lati, loni), (ti1, ti2))
                     if np.isclose(qratio, qratio_fv):
@@ -586,16 +614,19 @@ def run(input_nc, output_nc,
                 swi[np.isclose(swi, swi_fv)] = np.nan
                 if np.isnan(swi).any():
                     swi_arr = np.array(ncv['SWI_M'])
+                    swi_arr[np.isclose(swi_arr, swi_fv)] = np.nan
                     swi = replace_with_closest(swi, swi_arr,
                                                (lati, loni), (ti1, ti2))
                 swio[np.isclose(swio, swio_fv)] = np.nan
                 if np.isnan(swio).any():
                     swio_arr = np.array(ncv['SWIo_M'])
+                    swio_arr[np.isclose(swio_arr, swio_fv)] = np.nan
                     swio = replace_with_closest(swio, swio_arr,
                                                 (lati, loni), (ti1, ti2))
                 swix[np.isclose(swix, swix_fv)] = np.nan
                 if np.isnan(swix).any():
                     swix_arr = np.array(ncv['SWIx_M'])
+                    swix_arr[np.isclose(swix_arr, swix_fv)] = np.nan
                     swix = replace_with_closest(swix, swix_arr,
                                                 (lati, loni), (ti1, ti2))
                 if np.isclose(qratio, qratio_fv):
