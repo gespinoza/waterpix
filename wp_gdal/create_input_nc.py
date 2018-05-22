@@ -14,7 +14,7 @@ from .davgis import (Spatial_Reference, Buffer, Feature_to_Raster, Resample,
                      Clip, Raster_to_Array, Get_Extent)
 import pandas as pd
 import netCDF4
-
+import subprocess
 
 def create_input_nc(start_date, years,
                     cellsize, basin_shp,
@@ -76,7 +76,8 @@ def create_input_nc(start_date, years,
 
     projection = Spatial_Reference(epsg, True)
     ll_corner = [lonlim[0], latlim[0]]
-    bbox = [lonlim[0], latlim[0], lonlim[1], latlim[1]]
+#    bbox = [lonlim[0], latlim[0], lonlim[1], latlim[1]]
+    bbox = [lonlim[0], latlim[0], lon_ls[-1]+ 0.5*cellsize, lat_ls[0]+ 0.5*cellsize]
 
     # Temp directory
     temp_dir1 = tempfile.mkdtemp()
@@ -233,21 +234,37 @@ def create_input_nc(start_date, years,
 
     # Theta sat
     print "{0}\t{1}".format('thetasat', thetasat_ras)
-    thetasat_temp1 = os.path.join(temp_dir1, 'thetasat1.tif')
+#    thetasat_temp1 = os.path.join(temp_dir1, 'thetasat1.tif')
     thetasat_temp2 = os.path.join(temp_dir1, 'thetasat2.tif')
-    Resample(thetasat_ras, thetasat_temp1, cellsize, 'NearestNeighbour')
-
-    Clip(thetasat_temp1, thetasat_temp2, bbox)
+#    Resample(thetasat_ras, thetasat_temp1, cellsize, 'NearestNeighbour')
+#
+#    Clip(thetasat_temp1, thetasat_temp2, bbox)
+    exec_string = 'gdalwarp -te {0} {1} {2} {3} -tr {4} {5} -r near -srcnodata -3.40282e+35 -dstnodata -9999 {6} {7}'.format(
+            bbox[0], bbox[1], bbox[2], bbox[3], 
+            cellsize, cellsize,
+            thetasat_ras,
+            thetasat_temp2)
+    proc = subprocess.Popen(exec_string, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = proc.communicate() 
     array_thetasat = Raster_to_Array(thetasat_temp2, ll_corner, lon_n, lat_n)
     thetasat_var[:, :] = array_thetasat[:, :]
 
     # Root depth
     print "{0}\t{1}".format('rootdepth', rootdepth_ras)
-    rootdepth_temp1 = os.path.join(temp_dir1, 'rootdepth1.tif')
+#    rootdepth_temp1 = os.path.join(temp_dir1, 'rootdepth1.tif')
     rootdepth_temp2 = os.path.join(temp_dir1, 'rootdepth2.tif')
-    Resample(rootdepth_ras, rootdepth_temp1, cellsize, 'NearestNeighbour')
+#    Resample(rootdepth_ras, rootdepth_temp1, cellsize, 'NearestNeighbour')
+#
+#    Clip(rootdepth_temp1, rootdepth_temp2, bbox)
 
-    Clip(rootdepth_temp1, rootdepth_temp2, bbox)
+    exec_string = 'gdalwarp -te {0} {1} {2} {3} -tr {4} {5} -r near -srcnodata -3.40282e+35 -dstnodata -9999 {6} {7}'.format(
+            bbox[0], bbox[1], bbox[2], bbox[3], 
+            cellsize, cellsize,
+            rootdepth_ras,
+            rootdepth_temp2)
+    proc = subprocess.Popen(exec_string, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = proc.communicate() 
+
     array_rootdepth = Raster_to_Array(rootdepth_temp2, ll_corner, lon_n, lat_n)
     rootdepth_var[:, :] = array_rootdepth[:, :]
 
@@ -266,40 +283,55 @@ def create_input_nc(start_date, years,
     for var in ['p', 'et', 'eto', 'lai',
                 'swi', 'swio', 'swix', 'rainydays']:
         # Make temp directory
-        temp_dir2 = tempfile.mkdtemp()
+#        temp_dir2 = tempfile.mkdtemp()
         temp_dir3 = tempfile.mkdtemp()
         for yyyymm in time_ls:
             yyyy = yyyymm[:4]
             mm = yyyymm[-2:]
             ras = all_paths[var].format(yyyy=yyyy, mm=mm)
             print "{0}\t{1}".format(var, ras)
-            Resample(ras, os.path.join(temp_dir2, os.path.basename(ras)),
-                     cellsize, 'NearestNeighbour')
-            Clip(os.path.join(temp_dir2, os.path.basename(ras)),
-                 os.path.join(temp_dir3, os.path.basename(ras)),
-                 bbox)
+#            Resample(ras, os.path.join(temp_dir2, os.path.basename(ras)),
+#                     cellsize, 'NearestNeighbour')
+#            Clip(os.path.join(temp_dir2, os.path.basename(ras)),
+#                 os.path.join(temp_dir3, os.path.basename(ras)),
+#                 bbox)
+            exec_string = 'gdalwarp -te {0} {1} {2} {3} -tr {4} {5} -r near -srcnodata -9999 -dstnodata -9999 {6} {7}'.format(
+                    bbox[0], bbox[1], bbox[2], bbox[3], 
+                    cellsize, cellsize,
+                    ras,
+                    os.path.join(temp_dir3, os.path.basename(ras)))
+            proc = subprocess.Popen(exec_string, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            out, err = proc.communicate()
             array = Raster_to_Array(os.path.join(temp_dir3,
                                                  os.path.basename(ras)),
                                     ll_corner, lon_n, lat_n)
+            
             t_index = time_ls.index(yyyymm)
             exec('{0}_var[t_index, :, :] = array[:, :]'.format(var))
     # Runoff ratio
     temp_dir2 = tempfile.mkdtemp()
     temp_dir3 = tempfile.mkdtemp()
     for yyyy in years_ls:
-        for yyyymm in time_ls:
-            ras = all_paths['qratio'].format(yyyy=yyyy)
-            print "{0}\t{1}".format('qratio', ras)
-            Resample(ras, os.path.join(temp_dir2, os.path.basename(ras)),
-                     cellsize, 'NearestNeighbour')
-            Clip(os.path.join(temp_dir2, os.path.basename(ras)),
-                 os.path.join(temp_dir3, os.path.basename(ras)),
-                 bbox)
-            array = Raster_to_Array(os.path.join(temp_dir3,
-                                                 os.path.basename(ras)),
-                                    ll_corner, lon_n, lat_n)
-            y_index = years_ls.index(yyyy)
-            qratio_var[y_index, :, :] = array[:, :]
+        ras = all_paths['qratio'].format(yyyy=yyyy)
+        print "{0}\t{1}".format('qratio', ras)
+#            Resample(ras, os.path.join(temp_dir2, os.path.basename(ras)),
+#                     cellsize, 'NearestNeighbour')
+#            Clip(os.path.join(temp_dir2, os.path.basename(ras)),
+#                 os.path.join(temp_dir3, os.path.basename(ras)),
+#                 bbox)
+        exec_string = 'gdalwarp -te {0} {1} {2} {3} -tr {4} {5} -r near -srcnodata -9999 -dstnodata -9999 {6} {7}'.format(
+                bbox[0], bbox[1], bbox[2], bbox[3], 
+                cellsize, cellsize,
+                ras,
+                os.path.join(temp_dir3, os.path.basename(ras)))
+        proc = subprocess.Popen(exec_string, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = proc.communicate()
+
+        array = Raster_to_Array(os.path.join(temp_dir3,
+                                             os.path.basename(ras)),
+                                ll_corner, lon_n, lat_n)
+        y_index = years_ls.index(yyyy)
+        qratio_var[y_index, :, :] = array[:, :]
 
     # Calculate yearly rasters
     for yyyy in years_ls:

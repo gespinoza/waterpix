@@ -43,18 +43,18 @@ def calculate_first_round(df, pixel_pars, infz_bounds,
         minerror_infz = minimize_scalar(flows_calculations_first_round,
                                         bounds=infz_bounds,
                                         args=(df, (qratio, baseflow_filter,
-                                                   p_et_dsm), True),
+                                                   p_et_dsm, rootdepth), True),
                                         method='bounded')
         # Flows calculation
         df = flows_calculations_first_round(minerror_infz.x, df,
                                             (qratio, baseflow_filter,
-                                             p_et_dsm), False)
+                                             p_et_dsm, rootdepth), False)
         # Water balance fix for when percolation is artificially set to 0
         maski = (df['p'] - df['et'] - df['Qsw'] - df['dsm']) < 0
         if np.any(maski):
-            df['Qsw'][maski] = df['p'][maski] - df['et'][maski] - df['dsm'][maski]
-        df['Qsw'] = df['Qsw'].apply(pos_func, 'columns')    
-            
+            df['Qsw'][maski] = df['p'][maski] - df['et'][maski] - \
+                               df['dsm'][maski]
+        df['Qsw'] = df['Qsw'].apply(pos_func, 'columns')
         if sqrt(minerror_infz.fun) > tolerance_yearly_waterbal:
             df = return_empty_df_columns(df)
             second_round = 30
@@ -74,7 +74,7 @@ def flows_calculations_first_round(infz, df, pixel_pars,
     at a pixel
     '''
     # Pixel parameters
-    qratio, baseflow_filter, p_et_dsm = pixel_pars
+    qratio, baseflow_filter, p_et_dsm, rootdepth = pixel_pars
     # Calibration parameter
     df['infz'] = infz
     # Runoff
@@ -83,20 +83,12 @@ def flows_calculations_first_round(infz, df, pixel_pars,
     df['Qgw'] = baseflow_calculation(np.array(df['Qsw']),
                                      baseflow_filter, qratio)
     # Remaining term of the water balance
-    df['Rest_Term'] = df['p'] - df['et'] - df['Qsw'] - df['dsm']
+    root_infz = rootdepth/infz
+    df['Rest_Term'] = root_infz*(df['p'] - df['et'] - df['Qsw'] - df['dsm'])
     df['Rest_Term_pos'] = df['Rest_Term'].apply(pos_func, 'columns')
-#    rest_term_sum = df['Rest_Term_pos'].sum()
-#    # Correction of percolation using baseflow
-#    if rest_term_sum > 0:
-#        corr_factor = max(1, df['Qgw'].sum()/rest_term_sum)
-#    else:
-#        corr_factor = 1
-#    df['perc'] = corr_factor * df['Rest_Term'].apply(pos_func, 'columns')
     df['perc'] = df['Rest_Term_pos']
     # Error calculation
-    flows = sum(df['Qsw']) + sum(df['Qgw'])
-#    flows = sum(df['Qsw']) +sum(df['Rest_Term'] )
-    
+    flows = sum(df['Qsw']) + sum(df['Qgw']) + sum(df['perc'])
     error = (p_et_dsm - flows) ** 2
     # Return error or data frame
     if return_error:
@@ -123,7 +115,8 @@ def calculate_second_round(df, pixel_pars, default_eff,
     df['perc'] = a * (df['thetarz']) ** b
     # Flows calculation
     df = flows_calculations_second_round(infz, df, (qratio, baseflow_filter,
-                                                    green_et_yr, blue_et_yr),
+                                                    green_et_yr, blue_et_yr,
+                                                    rootdepth),
                                          default_eff,
                                          tolerance_monthly_greenpx,
                                          incrunoff_propfactor_bounds)
@@ -132,7 +125,7 @@ def calculate_second_round(df, pixel_pars, default_eff,
     # Output data frame
     df_out = df[['Qsw', 'delta_Qsw', 'Qgw', 'Qtot', 'dsm', 'infz', 'thetarz',
                  'perc', 'delta_perc', 'supply', 'eff', 'rainfed',
-                 'et_blue','et_green']]
+                 'et_blue', 'et_green']]
     # Return data frame
     return df_out
 
@@ -145,7 +138,7 @@ def flows_calculations_second_round(infz, df, pixel_pars, default_eff,
     at a pixel
     '''
     # Pixel parameters
-    qratio, baseflow_filter, green_et_yr, blue_et_yr = pixel_pars
+    qratio, baseflow_filter, green_et_yr, blue_et_yr, rootdepth = pixel_pars
     # Calibration parameter
     df['infz'] = infz
     # ET blue/green partitioning using the budyko curve
@@ -167,27 +160,23 @@ def flows_calculations_second_round(infz, df, pixel_pars, default_eff,
         df['p'] - df['interception'] +
         df['infz'] * (df['thetasat'] - df['theta0']))
     # Remaining term of the water balance
-    df['Rest_Term'] = df['p'] - df['et'] - df['Qsw_green'] - df['dsm']
-    df['Rest_Term2'] = df['p'] - df['et_green'] - df['Qsw_green'] - df['dsm']
+    root_infz = rootdepth/infz
+    df['Rest_Term'] = root_infz*(df['p'] - df['et'] -
+                                 df['Qsw_green'] - df['dsm'])
+    df['Rest_Term2'] = root_infz*(df['p'] - df['et_green'] -
+                                  df['Qsw_green'] - df['dsm'])
     df['Rest_Term_pos'] = df['Rest_Term'].apply(pos_func, 'columns')
     df['Rest_Term_pos2'] = df['Rest_Term2'].apply(pos_func, 'columns')
-#    rest_term_sum = df['Rest_Term_pos'].sum()
-    # Correction of percolation using baseflow
     df['Qgw_green'] = baseflow_calculation(np.array(df['Qsw_green']),
                                            baseflow_filter, qratio)
-#    if rest_term_sum > 0:
-#        corr_factor = max(1, df['Qgw_green'].sum()/rest_term_sum)
-#    else:
-#        corr_factor = 1
-    corr_factor = 1
-    df['perc_green'] = corr_factor * df['Rest_Term'].apply(pos_func, 'columns')
+    df['perc_green'] = df['Rest_Term'].apply(pos_func, 'columns')
     # Check for months without supply and correct percolation
     for index, row in df.iterrows():
         if row['et'] - row['et_green'] < tolerance_monthly_greenpx:
             df.set_value(index, 'perc', row['perc_green'])
         else:
             df.set_value(index, 'perc', row['perc'])
-            df['perc_green'] = corr_factor * df['Rest_Term2'].apply(pos_func, 'columns')
+            df['perc_green'] = df['Rest_Term2'].apply(pos_func, 'columns')
     # Incremental percolation
     df['delta_perc_diff'] = df['perc'] - df['perc_green']
     df['delta_perc'] = df['delta_perc_diff'].apply(pos_func, 'columns')
@@ -213,11 +202,9 @@ def flows_calculations_second_round(infz, df, pixel_pars, default_eff,
         df = incremental_runoff_calculation(minerror_f.x, df, infz,
                                             tolerance_monthly_greenpx,
                                             False)
-        # if delta_Qsw + row['delta_perc'] >= supply_value and
-        # delta_Qsw < 0, that means Qsw is very small ~ 0
         df['delta_Qsw'] = df['delta_Qsw'].apply(pos_func, 'columns')
         df['Qgw'] = baseflow_calculation(np.array(df['Qsw_green']),
-                                             baseflow_filter, qratio)
+                                         baseflow_filter, qratio)
     # Return data frame
     return df
 
@@ -239,8 +226,8 @@ def incremental_runoff_calculation(factor, df, infz,
             df.set_value(index, 'Qgw', row['Qgw_green'])
             df.set_value(index, 'supply', 0)
             df.set_value(index, 'eff', -9999)
-            df.set_value(index, 'et_green', row['et']) # cmi001
-            df.set_value(index, 'et_blue', 0) # cmi001
+            df.set_value(index, 'et_green', row['et'])  # cmi001
+            df.set_value(index, 'et_blue', 0)  # cmi001
         else:
             # Supply and incremental surface runoff
             delta_Qsw_func = lambda delta_Qsw_value: delta_Qsw_value - factor*(
@@ -251,36 +238,23 @@ def incremental_runoff_calculation(factor, df, infz,
                     infz*(row['thetasat'] - row['theta0']))
             delta_Qsw = max(0, fsolve(delta_Qsw_func, 0.0))
             delta_perc = row['delta_perc']
-#            supply_value = max(row['et_blue']+ delta_Qsw + delta_perc,
-#                               -(row['p'] - row['et'] - row['perc'] -
-#                                 row['Qsw_green'] - delta_Qsw - row['dsm']))
+            '''
+            supply_value = max(row['et_blue'] + delta_Qsw + delta_perc,
+                               -(row['p'] - row['et'] - row['perc'] -
+                                 row['Qsw_green'] - delta_Qsw - row['dsm']))
             supply_value = row['et_blue']+ delta_Qsw + delta_perc
+            '''
             supply_value_wb = -(row['p'] - row['et'] - row['perc'] -
-                                 row['Qsw_green'] - delta_Qsw - row['dsm'])
-#            green_perc_err = supply_value - supply_value_wb
-#            new_perc_green = max(row['perc_green'] + green_perc_err,0)
+                                row['Qsw_green'] - delta_Qsw - row['dsm'])
             new_perc_green = row['perc_green']
-#            new_perc_green[np.where(new_perc_green<0)] = 0
             new_perc = new_perc_green + delta_perc
-#            supply_value = (row['et_blue']+ delta_Qsw + delta_perc)
-#            supply_diff = row['et_blue']+ delta_Qsw + delta_perc + (
-#                    row['p'] - row['et'] - row['perc'] -
-#                    row['Qsw_green'] - delta_Qsw - row['dsm'])
-#
-#            supply_value = max(row['et_blue'],
-#                               -(row['p'] - row['et'] - row['perc'] -
-#                                 row['Qsw_green'] - delta_Qsw))
             # Calculation
-            
             eff = (supply_value_wb - delta_Qsw - delta_perc)/supply_value_wb
             # Compute values
             Qsw = row['Qsw_green'] + delta_Qsw
-            # If Qsw used instead of Qsw_green the values of Qgw are very large
-#            Qgw = row['Qsw_green'] / row['qratio'] - row['Qsw_green']
             # Save values
             df.set_value(index, 'delta_Qsw', delta_Qsw)
             df.set_value(index, 'Qsw', Qsw)
-#            df.set_value(index, 'Qgw', Qgw)
             df.set_value(index, 'supply', supply_value_wb)
             df.set_value(index, 'eff', eff)
             df.set_value(index, 'perc_green', new_perc_green)
